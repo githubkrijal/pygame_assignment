@@ -1,4 +1,5 @@
 import pygame  #“>” and “<”
+import math
 
 #initializing pygame
 pygame.init()
@@ -19,10 +20,26 @@ idle_right = pygame.image.load("idelr.png")
 idle_left = pygame.image.load("idlel.png")
 character = pygame.image.load("robot.png")
 
+#image of zombie
+zombiewalkright = [pygame.image.load("zombieright/zombieright1.png"),pygame.image.load("zombieright/zombieright2.png"),
+                   pygame.image.load("zombieright/zombieright3.png"),pygame.image.load("zombieright/zombieright4.png"),
+                   pygame.image.load("zombieright/zombieright5.png"),pygame.image.load("zombieright/zombieright6.png"),
+                   pygame.image.load("zombieright/zombieright7.png"),pygame.image.load("zombieright/zombieright8.png"),
+                   pygame.image.load("zombieright/zombieright9.png"),pygame.image.load("zombieright/zombieright10.png")]
+
+zombiewalkleft = [pygame.image.load("zombieleft/zombieleft1.png"), pygame.image.load("zombieleft/zombieleft2.png"),
+                  pygame.image.load("zombieleft/zombieleft3.png"),pygame.image.load("zombieleft/zombieleft4.png"),
+                  pygame.image.load("zombieleft/zombieleft5.png"),pygame.image.load("zombieleft/zombieleft6.png"),
+                  pygame.image.load("zombieleft/zombieleft7.png"),pygame.image.load("zombieleft/zombieleft8.png"),
+                  pygame.image.load("zombieleft/zombieleft9.png"),pygame.image.load("zombieleft/zombieleft10.png")]
+
+
 
 #bulletround = pygame.image.load("bullet1.png")
 
 clock = pygame.time.Clock()
+
+score = 0
 
 #keeping character attribute inside a class
 class player(object):
@@ -65,7 +82,8 @@ class player(object):
                 win.blit(idle_left,(self.x, self.y))    #walkleft[6]
 
         self.hitbox = (self.x + 37, self.y+10, 55, 110)
-        pygame.draw.rect(win,(255, 0, 0), self.hitbox,2)
+        #hitbox to check collision area
+        #pygame.draw.rect(win,(255, 0, 0), self.hitbox,2)
 
 #
 class projectile(object):
@@ -81,6 +99,8 @@ class projectile(object):
     def draw(self, win):
         pygame.draw.circle(win, self.color, (self.x,self.y), self.radius)
 
+
+
 class enemy(object):
     walkright = [pygame.image.load("planeright1.png"), pygame.image.load("planeright2.png")]
     walkleft = [pygame.image.load("planeleft1.png"), pygame.image.load("planeleft2.png")]
@@ -95,25 +115,29 @@ class enemy(object):
         self.walkCount = 0
         self.vel = 3
         self.hitbox = (self.x + 10, self.y, 180, 125)
+        self.health = 10
+        self.visible = True
 
     def draw(self,win):
         self.move()
-        if self.walkCount + 1 >= 6:
-            self.walkCount = 0
+        if self.visible:
+            if self.walkCount + 1 >= 6:
+                self.walkCount = 0
 
-        if self.vel > 0:
-            win.blit(self.walkright[self.walkCount//3], (self.x, self.y))
-            self.walkCount +=1
-        else:
-            win.blit(self.walkleft[self.walkCount // 3], (self.x, self.y))
-            self.walkCount += 1
+            if self.vel > 0:
+                win.blit(self.walkright[self.walkCount//3], (self.x, self.y))
+                self.walkCount +=1
+            else:
+                win.blit(self.walkleft[self.walkCount // 3], (self.x, self.y))
+                self.walkCount += 1
+            #health bar
+            pygame.draw.rect(win, (255,0,0), (self.hitbox[0], self.hitbox[1]- 20, 120, 10))
+            pygame.draw.rect(win, (0,128,0), (self.hitbox[0], self.hitbox[1]- 20, 120 - ((120/10) * (10 - self.health)), 10))
 
-        self.hitbox = (self.x + 10, self.y, 180, 125)
-        pygame.draw.rect(win, (255, 0, 0), self.hitbox, 2)
+            self.hitbox = (self.x + 10, self.y, 180, 125)
+            #hitbox to check collision area
+            #pygame.draw.rect(win, (255, 0, 0), self.hitbox, 2)
 
-    def hit(self):
-        print("hit")
-        pass
 
 
 
@@ -132,9 +156,21 @@ class enemy(object):
                 self.vel = self.vel * -1
                 self.walkCount = 0
 
+    def hit(self):
+        if self.health > 1:
+            self.health -= 1
+        else:
+            self.visible = False
+        print("hit")
+
+
 def redrawGameWindow():
     # filling the screen with a image
     win.blit(bg, (0,0))
+
+    text = font.render("Score: "+ str(score), 1, (0,0,0))
+    win.blit(text, (390, 10))
+
     #calling robot from class
     robot.draw(win)
 
@@ -149,6 +185,7 @@ def redrawGameWindow():
 
 
 #creating a main loop
+font = pygame.font.SysFont("comicsans", 40, True)
 robot = player(300, 370, 80, 40)
 plane = enemy(40,100, 100,100, 900)
 bullets = []
@@ -156,6 +193,7 @@ shootloop = 0
 run = True
 while run:
     clock.tick(24)
+
 
     if shootloop > 0:
         shootloop += 1
@@ -167,11 +205,14 @@ while run:
         if event.type == pygame.QUIT:
             run = False
 
+
     for bullet in bullets:
-        if bullet.y - bullet.radius < plane.hitbox[1] + plane.hitbox[3] and bullet.y + bullet.radius > plane.hitbox[1]:
-            if bullet.x + bullet.radius > plane.hitbox[0] and bullet.x - bullet.radius < plane.hitbox[0] +plane.hitbox[2]:
-                plane.hit()
-                bullets.pop(bullets.index(bullet))
+        if plane.visible:
+            if bullet.y - bullet.radius < plane.hitbox[1] + plane.hitbox[3] and bullet.y + bullet.radius > plane.hitbox[1]:
+                if bullet.x + bullet.radius > plane.hitbox[0] and bullet.x - bullet.radius < plane.hitbox[0] +plane.hitbox[2]:
+                    plane.hit()
+                    score += 1
+                    bullets.pop(bullets.index(bullet))
                 # “>” and “<”
         if bullet.x < 1000 and bullet.x > 0:
             bullet.x += bullet.vel
