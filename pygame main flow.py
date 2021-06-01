@@ -20,7 +20,6 @@ idle_left = pygame.image.load("idlel.png")
 character = pygame.image.load("robot.png")
 
 
-
 #bulletround = pygame.image.load("bullet1.png")
 
 clock = pygame.time.Clock()
@@ -40,6 +39,7 @@ class player(object):
         self.right = False
         self.walkCount = 0
         self.standing = True
+        self.hitbox = (self.x + 37, self.y+10, 55, 110)
 
     #players fuctions
     def draw(self,win):
@@ -63,6 +63,9 @@ class player(object):
                 win.blit(idle_right,(self.x, self.y))  #walkright[6]
             else:
                 win.blit(idle_left,(self.x, self.y))    #walkleft[6]
+
+        self.hitbox = (self.x + 37, self.y+10, 55, 110)
+        pygame.draw.rect(win,(255, 0, 0), self.hitbox,2)
 
 #
 class projectile(object):
@@ -91,6 +94,7 @@ class enemy(object):
         self.path = [self.x, self.end]
         self.walkCount = 0
         self.vel = 3
+        self.hitbox = (self.x + 10, self.y, 180, 125)
 
     def draw(self,win):
         self.move()
@@ -98,30 +102,35 @@ class enemy(object):
             self.walkCount = 0
 
         if self.vel > 0:
-            win.blit(self.walkleft[self.walkCount//3], (self.x, self.y))
+            win.blit(self.walkright[self.walkCount//3], (self.x, self.y))
             self.walkCount +=1
         else:
-            win.blit(self.walkright[self.walkCount // 3], (self.x, self.y))
+            win.blit(self.walkleft[self.walkCount // 3], (self.x, self.y))
             self.walkCount += 1
+
+        self.hitbox = (self.x + 10, self.y, 180, 125)
+        pygame.draw.rect(win, (255, 0, 0), self.hitbox, 2)
+
+    def hit(self):
+        print("hit")
         pass
 
+
+
+#plane movement
     def move(self):
-        if  self.vel > 0:
+        if self.vel > 0:
             if self.x + self.vel < self.path[1]:
-                self.x -= self.vel
-            else:
-                self.vel = self.vel * +1
-                self.walkCount = 0
-        else:
-            if self.x + self.vel > self.path[0]:
-                self.x -= self.vel
+                self.x += self.vel
             else:
                 self.vel = self.vel * -1
                 self.walkCount = 0
-
-
-
-
+        else:
+            if self.x - self.vel > self.path[0]:
+                self.x += self.vel
+            else:
+                self.vel = self.vel * -1
+                self.walkCount = 0
 
 def redrawGameWindow():
     # filling the screen with a image
@@ -140,18 +149,30 @@ def redrawGameWindow():
 
 
 #creating a main loop
-robot = player(300, 370, 80, 80)
-plane = enemy(800,100, 100,100, 1000)
+robot = player(300, 370, 80, 40)
+plane = enemy(40,100, 100,100, 900)
 bullets = []
+shootloop = 0
 run = True
 while run:
     clock.tick(24)
+
+    if shootloop > 0:
+        shootloop += 1
+    if shootloop > 5:
+        shootloop = 0
+
     #checking for event users command
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             run = False
 
     for bullet in bullets:
+        if bullet.y - bullet.radius < plane.hitbox[1] + plane.hitbox[3] and bullet.y + bullet.radius > plane.hitbox[1]:
+            if bullet.x + bullet.radius > plane.hitbox[0] and bullet.x - bullet.radius < plane.hitbox[0] +plane.hitbox[2]:
+                plane.hit()
+                bullets.pop(bullets.index(bullet))
+                # “>” and “<”
         if bullet.x < 1000 and bullet.x > 0:
             bullet.x += bullet.vel
         else:
@@ -161,7 +182,7 @@ while run:
     #continue to move charater when you press and hold key
     keys = pygame.key.get_pressed()
 
-    if keys[pygame.K_SPACE]:
+    if keys[pygame.K_SPACE] and shootloop == 0:
         #moving bullet in left direction
         if robot.left:
             facing = -1
@@ -172,6 +193,8 @@ while run:
         if len(bullets) < 10:
             #making this so bullet cames from wherever player is facing
             bullets.append(projectile(round(robot.x + robot.width//2), round(robot.y + robot.height//2), 6, (255,0,0),facing ))
+
+        shootloop = 1
 
     #keys function and setting boundry
     if keys[pygame.K_LEFT] and (robot.x + 50) > robot.vel:
