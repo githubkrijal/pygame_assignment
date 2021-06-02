@@ -17,3 +17,26 @@ class bullet_mouse(object):
 
         pygame.draw.circle(win, (255, 255, 255), (self.x, self.y), self.radius)
         self.lifetime -= 1
+
+
+
+
+
+
+
+class enemyspawner(object):
+    def __init__(self):
+        self.ememy_group = pygame.sprite.Group()
+        self.spawn_timer = random.randrange(30,120)
+
+    def update(self):
+        self.ememy_group.update()
+        if self.spawn_timer == 0:
+            self.spawn_enemy()
+            self.spawn_timer = random.randrange(30, 120)
+        else:
+            self.spawn_timer -= 1
+
+    def spawn_enemy(self):
+        new_enemy = groundenemy()
+        self.ememy_group.add(new_enemy)
