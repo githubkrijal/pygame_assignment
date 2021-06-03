@@ -1,6 +1,5 @@
-import pygame  #“>” and “<”
+import pygame
 import math
-import random
 
 #initializing pygame
 pygame.init()
@@ -27,8 +26,8 @@ clock = pygame.time.Clock()
 score = 0
 
 #sounds
-maingamemusic = pygame.mixer.music.load("mainsound.wav")
-pygame.mixer.music.play(-1)
+#maingamemusic = pygame.mixer.music.load("mainsound.wav")
+#pygame.mixer.music.play(-1)
 
 #keeping character attribute inside a class
 class player(object):
@@ -284,7 +283,7 @@ def redrawGameWindow():
 font = pygame.font.SysFont("comicsans", 35, True)
 robot = player(800, 370, 80, 40)
 plane = enemy(20,100, 100,100, 900)
-zombie = groundenemy(20,360, 80, 40, 900)
+zombie = groundenemy(30,360, 80, 40, 900)
 enemies = []
 maxenemies = 10
 bullets = []
