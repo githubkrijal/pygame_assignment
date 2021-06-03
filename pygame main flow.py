@@ -9,7 +9,7 @@ pygame.init()
 win = pygame.display.set_mode((1000,500))
 
 #name of the game
-pygame.display.set_caption("Made by Krijal")
+pygame.display.set_caption("Robot vs Zombies")
 walkright = [pygame.image.load("robotright/rightr1.png"),pygame.image.load("robotright/rightr2.png"),pygame.image.load("robotright/rightr3.png"),
              pygame.image.load("robotright/rightr4.png"),pygame.image.load("robotright/rightr5.png"),pygame.image.load("robotright/rightr6.png"),
              pygame.image.load("robotright/rightr7.png"),pygame.image.load("robotright/rightr8.png"),]
@@ -22,14 +22,11 @@ idle_left = pygame.image.load("idlel.png")
 character = pygame.image.load("robot.png")
 
 
-
-#bulletround = pygame.image.load("bullet1.png")
-
 clock = pygame.time.Clock()
-
+#initialization of score
 score = 0
 
-#sound
+#sounds
 maingamemusic = pygame.mixer.music.load("mainsound.wav")
 pygame.mixer.music.play(-1)
 
@@ -217,17 +214,14 @@ class groundenemy(object):
                 win.blit(self.zombiewalkleft[self.walkCount // 3], (self.x, self.y))
                 self.walkCount += 1
             # health bar
-            pygame.draw.rect(win, (255, 0, 0), (self.hitbox[0], self.hitbox[1] - 20, 120, 10))
+            pygame.draw.rect(win, (255, 0, 0), (self.hitbox[0], self.hitbox[1] - 20, 70, 10))
             pygame.draw.rect(win, (0, 128, 0),
-                            (self.hitbox[0], self.hitbox[1] - 20, 120 - ((120 / 10) * (10 - self.health)), 10))
+                            (self.hitbox[0], self.hitbox[1] - 20, 80 - ((70 / 10) * (10 - self.health)), 10))
 
             #creating hitbox for collision
             self.hitbox = (self.x + 20, self.y+20, 70, 125)
             #display hitbox to check collision area
             #pygame.draw.rect(win, (255, 0, 0), self.hitbox, 2)
-
-
-
 
 
 #zombie movement
@@ -252,19 +246,18 @@ class groundenemy(object):
             self.visible = False
         print("hit")
 
-
-
-
-
-
-
-
 def redrawGameWindow():
     # filling the screen with a image
     win.blit(bg, (0,0))
 
-    text = font.render("Score: "+ str(score), 1, (0,0,0))
+    #score board
+    text = font.render("Score: "+ str(score), 1, (255,0,0))
     win.blit(text, (390, 10))
+
+    #high score
+    scorehigh = font.render("High Score : " + str(score), 1, (200, 150, 55))
+    win.blit(scorehigh, (700, 10))
+
 
     #calling robot from class
     robot.draw(win)
@@ -278,20 +271,26 @@ def redrawGameWindow():
     for bullet in bullets:
         bullet.draw(win)
 
+    for zombie1 in zombies:
+        zombie1.draw(win)
+
+
 
     # refresh the display
     pygame.display.update()
 
 
-#creating a main loop
-font = pygame.font.SysFont("comicsans", 40, True)
-robot = player(300, 370, 80, 40)
-plane = enemy(40,100, 100,100, 900)
-zombie = groundenemy(40,370, 80, 40, 900)
+#main loop
+font = pygame.font.SysFont("comicsans", 35, True)
+robot = player(800, 370, 80, 40)
+plane = enemy(20,100, 100,100, 900)
+zombie = groundenemy(20,360, 80, 40, 900)
 enemies = []
 maxenemies = 10
 bullets = []
 shootloop = 0
+zombies = []
+zombie1 = groundenemy(zombie.x, zombie.y, zombie.width, zombie.height, zombie.end)
 run = True
 while run:
     clock.tick(24)
@@ -300,7 +299,7 @@ while run:
         if robot.hitbox[1] < zombie.hitbox[1] + zombie.hitbox[3] and robot.hitbox[1] + robot.hitbox[3] > zombie.hitbox[1]:
             if robot.hitbox[0] + robot.hitbox[2]  > zombie.hitbox[0] and robot.hitbox[0] < zombie.hitbox[0] + zombie.hitbox[2]:
                 robot.hit()
-                score -= 5
+                score -= 1
 
 
     if shootloop > 0:
@@ -314,8 +313,38 @@ while run:
             run = False
 
 
+    #spawning zombies
+    if zombie.visible == False:
+        for zombie1 in zombies:
+            if robot.hitbox[1] < zombie1.hitbox[1] + zombie1.hitbox[3] and robot.hitbox[1] + robot.hitbox[3] > \
+                    zombie1.hitbox[1]:
+                if robot.hitbox[0] + robot.hitbox[2] > zombie1.hitbox[0] and robot.hitbox[0] < zombie1.hitbox[0] + \
+                        zombie1.hitbox[2]:
+                    robot.hit()
+                    score -= 1
 
 
+        if len(zombies) < 2:
+            zombies.append(groundenemy(30,360, 80, 40, 900))
+
+
+    #bullet on spawned zombies
+        for bullet in bullets:
+            if zombie1.visible == True:
+                if bullet.y - bullet.radius < zombie1.hitbox[1] + zombie1.hitbox[3] and bullet.y + bullet.radius > zombie1.hitbox[1]:
+                    if bullet.x + bullet.radius > zombie1.hitbox[0] and bullet.x - bullet.radius < zombie1.hitbox[0] +zombie1.hitbox[2]:
+                        zombie1.hit()
+                        score += 1
+                        bullets.pop(bullets.index(bullet))
+
+            if bullet.x < 1000 and bullet.x > 0:
+                bullet.x += bullet.vel
+            else:
+            #delete bullet
+                bullets.pop(bullets.index(bullet))
+
+
+#bullet hit on plane
     for bullet in bullets:
         if plane.visible:
             if bullet.y - bullet.radius < plane.hitbox[1] + plane.hitbox[3] and bullet.y + bullet.radius > plane.hitbox[1]:
@@ -323,7 +352,6 @@ while run:
                     plane.hit()
                     score += 2
                     bullets.pop(bullets.index(bullet))
-                # “>” and “<”
 
         if bullet.x < 1000 and bullet.x > 0:
             bullet.x += bullet.vel
@@ -331,7 +359,7 @@ while run:
         #delete bullet
             bullets.pop(bullets.index(bullet))
 
-
+#bullet hit on zombie
     for bullet in bullets:
         if zombie.visible == True:
             if bullet.y - bullet.radius < zombie.hitbox[1] + zombie.hitbox[3] and bullet.y + bullet.radius > zombie.hitbox[1]:
@@ -345,12 +373,6 @@ while run:
         else:
         #delete bullet
             bullets.pop(bullets.index(bullet))
-
-
-        # creating multiple zombies
-    for i in range(maxenemies):
-        enemies.append(groundenemy(200, 200, 50, 50, 900))
-
 
 
     #continue to move charater when you press and hold key
